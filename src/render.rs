@@ -52,6 +52,7 @@ pub(crate) fn extract_iced_data(
 }
 
 /// Iced node
+#[derive(Default)]
 pub struct IcedNode;
 
 impl Node for IcedNode {

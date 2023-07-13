@@ -16,6 +16,7 @@ use iced_wgpu::graphics::Viewport;
 
 use crate::{DidDraw, IcedProps, IcedResource, IcedSettings};
 
+/// Iced render pass
 pub const ICED_PASS: &str = "bevy_iced_pass";
 
 #[derive(Resource, Deref, DerefMut, Clone)]
@@ -50,6 +51,7 @@ pub(crate) fn extract_iced_data(
     ));
 }
 
+/// Iced node
 pub struct IcedNode;
 
 impl Node for IcedNode {

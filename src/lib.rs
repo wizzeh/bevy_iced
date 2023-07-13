@@ -34,18 +34,18 @@
 use std::any::{Any, TypeId};
 use std::sync::{
     atomic::{AtomicBool, Ordering},
-    Arc, LockResult, Mutex, MutexGuard
+    Arc, LockResult, Mutex, MutexGuard,
 };
 
-use crate::render::{ICED_PASS, IcedNode};
 use crate::render::ViewportResource;
+pub use crate::render::{IcedNode, ICED_PASS};
 
 use bevy_app::{App, Plugin, Update};
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
     event::Event,
     prelude::{EventWriter, Query, With},
-    system::{NonSendMut, Res, ResMut, Resource, SystemParam}
+    system::{NonSendMut, Res, ResMut, Resource, SystemParam},
 };
 #[cfg(feature = "touch")]
 use bevy_input::touch::Touches;
@@ -60,25 +60,22 @@ use bevy_utils::HashMap;
 use bevy_window::{PrimaryWindow, Window};
 use iced::{user_interface::Cache as UiCache, UserInterface};
 pub use iced_runtime as iced;
+#[cfg(feature = "touch")]
+use iced_runtime::core::touch::Event as TouchEvent;
 use iced_runtime::{
     core::{clipboard, Element, Event as IcedEvent, Point, Size},
     Debug,
 };
-#[cfg(feature = "touch")]
-use iced_runtime::core::touch::Event as TouchEvent;
+pub use iced_style as style;
 use iced_style::Theme;
 pub use iced_wgpu;
-pub use iced_style as style;
-pub use iced_widget as widget;
 use iced_wgpu::{
-    core::{
-        renderer::Style,
-        Color
-    },
+    core::{renderer::Style, Color},
     graphics::Viewport,
     wgpu::TextureFormat,
     Backend as WgpuBackend,
 };
+pub use iced_widget as widget;
 
 mod conversions;
 mod render;
@@ -92,7 +89,6 @@ pub struct IcedPlugin;
 
 impl Plugin for IcedPlugin {
     fn build(&self, app: &mut App) {
-
         app.add_systems(Update, (systems::process_input, render::update_viewport))
             .insert_resource(DidDraw::default())
             .insert_resource(IcedSettings::default())
@@ -104,9 +100,8 @@ impl Plugin for IcedPlugin {
         let default_viewport = Viewport::with_physical_size(Size::new(1600, 900), 1.0);
         let default_viewport = ViewportResource(default_viewport);
         let iced_resource: IcedResource = IcedProps::new(app).into();
-        
-        app
-            .insert_resource(iced_resource.clone())
+
+        app.insert_resource(iced_resource.clone())
             .insert_resource(default_viewport.clone());
 
         let render_app = app.sub_app_mut(RenderApp);
@@ -133,9 +128,7 @@ impl IcedProps {
             .get_resource::<RenderDevice>()
             .unwrap()
             .wgpu_device();
-        let queue = render_world
-            .get_resource::<RenderQueue>()
-            .unwrap();
+        let queue = render_world.get_resource::<RenderQueue>().unwrap();
         let format = TextureFormat::Bgra8UnormSrgb;
 
         Self {
@@ -263,10 +256,12 @@ impl<'w, 's, M: Event> IcedContext<'w, 's, M> {
 
             window
                 .cursor_position()
-                .map(|Vec2 { x, y }| iced_wgpu::core::mouse::Cursor::Available(Point {
-                    x: x * bounds.width / window.width(),
-                    y: y * bounds.height / window.height(),
-                }))
+                .map(|Vec2 { x, y }| {
+                    iced_wgpu::core::mouse::Cursor::Available(Point {
+                        x: x * bounds.width / window.width(),
+                        y: y * bounds.height / window.height(),
+                    })
+                })
                 .or_else(|| process_touch_input(self))
                 .unwrap_or(iced_wgpu::core::mouse::Cursor::Unavailable)
         };
@@ -294,8 +289,7 @@ impl<'w, 's, M: Event> IcedContext<'w, 's, M> {
 
         self.events.clear();
         *cache_entry = Some(ui.into_cache());
-        self.did_draw
-            .store(true, Ordering::Relaxed);
+        self.did_draw.store(true, Ordering::Relaxed);
     }
 }
 
@@ -333,6 +327,5 @@ fn process_touch_input<M: Event>(context: &IcedContext<M>) -> Option<Point> {
 
 #[cfg(not(feature = "touch"))]
 fn process_touch_input<M: Event>(_: &IcedContext<M>) -> Option<iced_wgpu::core::mouse::Cursor> {
-
     None
 }

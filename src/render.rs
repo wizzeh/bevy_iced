@@ -1,13 +1,17 @@
 use bevy_derive::{Deref, DerefMut};
-use bevy_ecs::prelude::Query;
+use bevy_ecs::{
+    prelude::Query,
+    query::{QueryItem, QueryState, With},
+    world::FromWorld,
+};
 use bevy_ecs::{
     system::{Commands, Res, Resource},
     world::World,
 };
 use bevy_render::{
-    render_graph::{Node, NodeRunError, RenderGraphContext},
+    render_graph::{Node, NodeRunError, RenderGraphContext, ViewNode},
     renderer::{RenderContext, RenderDevice, RenderQueue},
-    view::ExtractedWindows,
+    view::{ExtractedView, ExtractedWindows, ViewTarget},
     Extract,
 };
 use bevy_window::Window;
@@ -52,22 +56,44 @@ pub(crate) fn extract_iced_data(
 }
 
 /// Iced node
-#[derive(Default)]
-pub struct IcedNode;
+pub struct IcedNode {
+    query: QueryState<&'static ViewTarget, With<ExtractedView>>,
+}
 
-impl Node for IcedNode {
+impl FromWorld for IcedNode {
+    fn from_world(world: &mut World) -> Self {
+        Self {
+            query: QueryState::new(world),
+        }
+    }
+}
+
+impl ViewNode for IcedNode {
+    fn update(&mut self, world: &mut World) {
+        self.query.update_archetypes(world);
+    }
+
+    type ViewQuery = &'static ViewTarget;
+
     fn run(
         &self,
-        _graph: &mut RenderGraphContext,
+        graph: &mut RenderGraphContext,
         render_context: &mut RenderContext,
+        target: QueryItem<Self::ViewQuery>,
         world: &World,
     ) -> Result<(), NodeRunError> {
-        let Some(extracted_window) = world
-            .get_resource::<ExtractedWindows>()
-            .unwrap()
-            .windows
-            .values()
-            .next() else { return Ok(()) };
+        // let Some(extracted_window) = world
+        //     .get_resource::<ExtractedWindows>()
+        //     .unwrap()
+        //     .windows
+        //     .values()
+        //     .next() else { return Ok(()) };
+
+        let view_entity = graph.view_entity();
+
+        let Ok(view_target) = self.query.get_manual(world, view_entity) else {
+            return Ok(())
+        };
 
         let IcedProps {
             renderer, debug, ..
@@ -83,7 +109,7 @@ impl Node for IcedNode {
             return Ok(());
         }
 
-        let view = extracted_window.swap_chain_texture_view.as_ref().unwrap();
+        let view = view_target.main_texture_view();
 
         let viewport = world.resource::<ViewportResource>();
         let device = render_device.wgpu_device();

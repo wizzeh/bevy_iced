@@ -52,7 +52,7 @@ use bevy_input::touch::Touches;
 use bevy_math::Vec2;
 use bevy_render::{
     main_graph::node::CAMERA_DRIVER,
-    render_graph::RenderGraph,
+    render_graph::{RenderGraph, ViewNodeRunner},
     renderer::{RenderDevice, RenderQueue},
     ExtractSchedule, RenderApp,
 };
@@ -109,7 +109,7 @@ impl Plugin for IcedPlugin {
             .insert_resource(default_viewport)
             .insert_resource(iced_resource)
             .add_systems(ExtractSchedule, render::extract_iced_data);
-        setup_pipeline(&mut render_app.world.get_resource_mut().unwrap());
+        // setup_pipeline(&mut render_app.world.get_resource_mut().unwrap());
     }
 }
 
@@ -129,7 +129,7 @@ impl IcedProps {
             .unwrap()
             .wgpu_device();
         let queue = render_world.get_resource::<RenderQueue>().unwrap();
-        let format = TextureFormat::Bgra8UnormSrgb;
+        let format = TextureFormat::Rgba16Float;
 
         Self {
             renderer: Renderer::Wgpu(iced_wgpu::Renderer::new(WgpuBackend::new(
@@ -159,10 +159,10 @@ impl From<IcedProps> for IcedResource {
     }
 }
 
-fn setup_pipeline(graph: &mut RenderGraph) {
-    graph.add_node(ICED_PASS, IcedNode);
-    graph.add_node_edge(CAMERA_DRIVER, ICED_PASS);
-}
+// fn setup_pipeline(graph: &mut RenderGraph) {
+//     graph.add_node(ICED_PASS, ViewNodeRunner::<IcedNode>::);
+//     graph.add_node_edge(CAMERA_DRIVER, ICED_PASS);
+// }
 
 #[doc(hidden)]
 #[derive(Default)]

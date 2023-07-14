@@ -40,7 +40,7 @@ use std::sync::{
 use crate::render::ViewportResource;
 pub use crate::render::{IcedNode, ICED_PASS};
 
-use bevy_app::{App, Plugin, Update};
+use bevy_app::{App, Last, Plugin, Update};
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
     event::Event,
@@ -70,7 +70,7 @@ pub use iced_style as style;
 use iced_style::Theme;
 pub use iced_wgpu;
 use iced_wgpu::{
-    core::{renderer::Style, Color},
+    core::{renderer::Style, Color, Renderer as RendererTrait},
     graphics::Viewport,
     wgpu::TextureFormat,
     Backend as WgpuBackend,
@@ -90,6 +90,7 @@ pub struct IcedPlugin;
 impl Plugin for IcedPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, (systems::process_input, render::update_viewport))
+            .add_systems(Last, clear_buffer)
             .insert_resource(DidDraw::default())
             .insert_resource(IcedSettings::default())
             .insert_non_send_resource(IcedCache::default())
@@ -291,6 +292,14 @@ impl<'w, 's, M: Event> IcedContext<'w, 's, M> {
         *cache_entry = Some(ui.into_cache());
         self.did_draw.store(true, Ordering::Relaxed);
     }
+}
+
+fn clear_buffer(resources: Res<IcedResource>) {
+    let IcedProps {
+        ref mut renderer, ..
+    } = &mut *resources.lock().unwrap();
+
+    renderer.clear();
 }
 
 #[cfg(feature = "touch")]

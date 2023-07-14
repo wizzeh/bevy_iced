@@ -90,7 +90,7 @@ pub struct IcedPlugin;
 impl Plugin for IcedPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, (systems::process_input, render::update_viewport))
-            .add_systems(Last, clear_buffer)
+            .add_systems(Last, clear_state)
             .insert_resource(DidDraw::default())
             .insert_resource(IcedSettings::default())
             .insert_non_send_resource(IcedCache::default())
@@ -288,18 +288,18 @@ impl<'w, 's, M: Event> IcedContext<'w, 's, M> {
             cursor_position,
         );
 
-        self.events.clear();
         *cache_entry = Some(ui.into_cache());
         self.did_draw.store(true, Ordering::Relaxed);
     }
 }
 
-fn clear_buffer(resources: Res<IcedResource>) {
+fn clear_state(resources: Res<IcedResource>, mut events: ResMut<IcedEventQueue>) {
     let IcedProps {
         ref mut renderer, ..
     } = &mut *resources.lock().unwrap();
 
     renderer.clear();
+    events.clear();
 }
 
 #[cfg(feature = "touch")]

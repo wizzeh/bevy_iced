@@ -12,7 +12,10 @@ use bevy_input::{
     ButtonState, Input,
 };
 use bevy_window::{CursorEntered, CursorLeft, CursorMoved, ReceivedCharacter};
-use iced_runtime::{keyboard, core::{mouse, Event as IcedEvent, Point}};
+use iced_runtime::{
+    core::{mouse, Event as IcedEvent, Point},
+    keyboard,
+};
 
 #[derive(Resource, Deref, DerefMut, Default)]
 pub struct IcedEventQueue(Vec<iced_runtime::core::Event>);
@@ -69,17 +72,23 @@ pub fn process_input(
     }
 
     for _ev in events.cursor_entered.iter() {
-        event_queue.push(IcedEvent::Mouse(iced_runtime::core::mouse::Event::CursorEntered));
+        event_queue.push(IcedEvent::Mouse(
+            iced_runtime::core::mouse::Event::CursorEntered,
+        ));
     }
 
     for _ev in events.cursor_left.iter() {
-        event_queue.push(IcedEvent::Mouse(iced_runtime::core::mouse::Event::CursorLeft));
+        event_queue.push(IcedEvent::Mouse(
+            iced_runtime::core::mouse::Event::CursorLeft,
+        ));
     }
 
     for ev in events.mouse_wheel.iter() {
-        event_queue.push(IcedEvent::Mouse(iced_runtime::core::mouse::Event::WheelScrolled {
-            delta: mouse::ScrollDelta::Pixels { x: ev.x, y: ev.y },
-        }));
+        event_queue.push(IcedEvent::Mouse(
+            iced_runtime::core::mouse::Event::WheelScrolled {
+                delta: mouse::ScrollDelta::Pixels { x: ev.x, y: ev.y },
+            },
+        ));
     }
 
     for ev in events.received_character.iter() {
